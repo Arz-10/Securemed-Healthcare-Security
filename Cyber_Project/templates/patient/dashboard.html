@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Patient Health Portal{% endblock %}
+
+{% block content %}
+<div class="py-2">
+
+  {% if not patient %}
+  <div class="alert alert-warning border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>
+        <h5 class="alert-heading mb-1">Patient Profile Incomplete</h5>
+        <p class="mb-0 small">Your user account has the 'patient' role, but no linked patient demographic record was found in the database. Please contact an administrator to complete your profile registration.</p>
+      </div>
+    </div>
+  </div>
+  {% else %}
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h1 class="sm-page-title mb-0">
+          <i class="bi bi-person-heart me-2 text-primary"></i>Patient Health Portal
+        </h1>
+        <span class="badge bg-success-subtle text-success border border-success-subtle small">Personal Portal Active</span>
+      </div>
+      <p class="text-secondary small mb-0">
+        Patient: <strong class="text-navy">{{ patient.full_name }}</strong> &bull;
+        DOB: <span class="text-navy">{{ patient.date_of_birth or '—' }}</span> &bull;
+        Blood: <span class="badge bg-light text-navy border">{{ patient.blood_group or '—' }}</span> &bull;
+        Emergency Contact: <span class="text-navy">{{ patient.emergency_contact or '—' }}</span>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn sm-btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+        <i class="bi bi-calendar-plus me-1"></i>Request Consultation
+      </button>
+      <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary btn-sm" title="Refresh records">
+        <i class="bi bi-arrow-clockwise"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Health Overview Metrics -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Appointments</span>
+            <h3 class="fw-bold text-navy mb-0 mt-1">{{ appointments|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light-primary text-primary">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Medical Records</span>
+            <h3 class="fw-bold text-info mb-0 mt-1">{{ records|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light text-info border">
+            <i class="bi bi-journal-medical"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Diagnostic Reports</span>
+            <h3 class="fw-bold text-secondary mb-0 mt-1">{{ reports|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light text-secondary border">
+            <i class="bi bi-file-earmark-medical"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills mb-3 sm-nav-pills gap-1" id="patientTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'appointments' %}active{% endif %}"
+         href="{{ url_for('patient.dashboard', tab='appointments') }}">
+        <i class="bi bi-calendar-event me-1"></i>My Appointments
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ appointments|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'records' %}active{% endif %}"
+         href="{{ url_for('patient.dashboard', tab='records') }}">
+        <i class="bi bi-clipboard2-pulse me-1"></i>Medical History
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ records|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'reports' %}active{% endif %}"
+         href="{{ url_for('patient.dashboard', tab='reports') }}">
+        <i class="bi bi-file-earmark-arrow-down me-1"></i>Diagnostic Reports
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ reports|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}"
+         href="{{ url_for('patient.dashboard', tab='profile') }}">
+        <i class="bi bi-person-badge me-1"></i>Personal Profile
+      </a>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="patientTabContent">
+
+    <!-- 1. Appointments Tab -->
+    {% if active_tab == 'appointments' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-calendar-check me-2 text-primary"></i>Consultation Appointments
+        </h5>
+        <button class="btn sm-btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+          <i class="bi bi-plus-lg me-1"></i>Request Consultation
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Date & Time</th>
+              <th scope="col">Attending Physician</th>
+              <th scope="col">Department</th>
+              <th scope="col">Reason / Notes</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in appointments %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-navy">{{ appt.appointment_date.strftime('%b %d, %Y') if appt.appointment_date else '—' }}</div>
+                <div class="text-muted small">{{ appt.appointment_date.strftime('%I:%M %p') if appt.appointment_date else '' }}</div>
+              </td>
+              <td>
+                <div class="fw-semibold text-navy">Dr. {{ appt.doctor_name }}</div>
+                <div class="text-muted small">{{ appt.specialisation }}</div>
+              </td>
+              <td>
+                <span class="badge bg-light text-navy border">{{ appt.department }}</span>
+              </td>
+              <td>
+                <div class="text-navy small fw-medium">{{ appt.reason }}</div>
+                {% if appt.notes %}
+                <div class="text-muted small fst-italic mt-1"><i class="bi bi-chat-left-text me-1"></i>{{ appt.notes }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if appt.status == 'scheduled' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Scheduled</span>
+                {% elif appt.status == 'completed' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                {% elif appt.status == 'cancelled' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Cancelled</span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary">{{ appt.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if appt.status == 'scheduled' %}
+                <button class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cancelModal{{ appt.id }}"
+                        title="Cancel Appointment">
+                  <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+
+                <!-- Cancel Appointment Confirmation Modal -->
+                <div class="modal fade" id="cancelModal{{ appt.id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ appt.id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form action="{{ url_for('patient.cancel_appointment', id=appt.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                        <div class="modal-header">
+                          <h5 class="modal-title h6 text-navy fw-bold" id="cancelModalLabel{{ appt.id }}">
+                            <i class="bi bi-exclamation-triangle text-danger me-2"></i>Cancel Consultation #{{ appt.id }}
+                          </h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-start">
+                          <p class="small text-secondary mb-2">
+                            Are you sure you want to cancel your scheduled appointment with <strong>Dr. {{ appt.doctor_name }}</strong> on <strong>{{ appt.appointment_date }}</strong>?
+                          </p>
+                          <div class="alert alert-light border small text-muted mb-0">
+                            You may rebook a consultation with any available physician at any time.
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Appointment</button>
+                          <button type="submit" class="btn btn-danger btn-sm">Confirm Cancellation</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-calendar-x fs-3 d-block mb-2 text-secondary"></i>
+                You have no scheduled consultations. Click "Request Consultation" to schedule an encounter.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. Medical Records Tab -->
+    {% if active_tab == 'records' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-clipboard2-pulse me-2 text-primary"></i>Personal Medical History
+        </h5>
+        <span class="text-muted small">Verified clinical documentation authored by attending physicians</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Attending Physician</th>
+              <th scope="col">Clinical Diagnosis</th>
+              <th scope="col">Prescription & Regimen</th>
+              <th scope="col">Physician Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in records %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-navy">{{ rec.record_date.strftime('%b %d, %Y') if rec.record_date else '—' }}</div>
+                <div class="text-muted small">{{ rec.record_date.strftime('%I:%M %p') if rec.record_date else '' }}</div>
+              </td>
+              <td>
+                <div class="fw-semibold text-navy">Dr. {{ rec.doctor_name }}</div>
+                <div class="text-muted small">{{ rec.specialisation }}</div>
+              </td>
+              <td>
+                <span class="fw-semibold text-primary">{{ rec.diagnosis }}</span>
+              </td>
+              <td>
+                <div class="text-navy small">{{ rec.prescription or 'None specified' }}</div>
+              </td>
+              <td class="text-muted small">
+                {{ rec.notes or '—' }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="bi bi-journal-x fs-3 d-block mb-2 text-secondary"></i>
+                No medical records logged under your profile yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 3. Reports Tab -->
+    {% if active_tab == 'reports' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-file-earmark-medical me-2 text-primary"></i>Diagnostic Reports & Lab Findings
+        </h5>
+        <span class="text-muted small">Verified binary files stored securely</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Upload Date</th>
+              <th scope="col">Document Name</th>
+              <th scope="col">Uploaded By</th>
+              <th scope="col">File Size</th>
+              <th scope="col" class="text-end">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rep in reports %}
+            <tr>
+              <td class="text-muted small">
+                {{ rep.upload_date.strftime('%b %d, %Y') if rep.upload_date else '—' }}
+              </td>
+              <td>
+                <div class="fw-semibold text-navy">
+                  <i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ rep.original_name }}
+                </div>
+                <div class="text-muted small">MIME: <code>{{ rep.mime_type }}</code></div>
+              </td>
+              <td class="text-muted small">{{ rep.uploader_name }}</td>
+              <td class="text-muted small">{{ (rep.file_size / 1024)|round(1) }} KB</td>
+              <td class="text-end">
+                <a href="{{ url_for('patient.download_report', id=rep.id) }}"
+                   class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-download me-1"></i>Download
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="bi bi-file-earmark-x fs-3 d-block mb-2 text-secondary"></i>
+                No diagnostic reports uploaded to your account yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. Profile Tab -->
+    {% if active_tab == 'profile' %}
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white py-3 border-light-subtle">
+            <h5 class="card-title text-navy mb-0 h6 fw-bold">
+              <i class="bi bi-person-lines-fill me-2 text-primary"></i>Account & Demographics
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Full Legal Name</span>
+                <span class="fw-semibold text-navy">{{ patient.full_name }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">System Username</span>
+                <span class="text-navy"><code>{{ patient.username }}</code></span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Date of Birth</span>
+                <span class="text-navy">{{ patient.date_of_birth or 'Not specified' }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Gender</span>
+                <span class="text-navy">{{ patient.gender|capitalize if patient.gender else 'Not specified' }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Blood Group</span>
+                <span class="badge bg-light text-navy border">{{ patient.blood_group or 'Not tested' }}</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted small d-block">Emergency Contact</span>
+                <span class="text-navy">{{ patient.emergency_contact or 'None on file' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white py-3 border-light-subtle">
+            <h5 class="card-title text-navy mb-0 h6 fw-bold">
+              <i class="bi bi-geo-alt-fill me-2 text-primary"></i>Contact Information
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <span class="text-muted small d-block">Email Address</span>
+                <span class="fw-medium text-navy">{{ patient.email }}</span>
+              </div>
+              <div class="col-12">
+                <span class="text-muted small d-block">Phone Number</span>
+                <span class="fw-medium text-navy">{{ patient.phone or 'No phone number registered' }}</span>
+              </div>
+              <div class="col-12">
+                <span class="text-muted small d-block">Residential Address</span>
+                <span class="text-navy">{{ patient.address or 'No address on file' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Modal: Request Consultation -->
+  <div class="modal fade" id="requestAppointmentModal" tabindex="-1" aria-labelledby="requestAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{{ url_for('patient.request_appointment') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+          <div class="modal-header">
+            <h5 class="modal-title h6 text-navy fw-bold" id="requestAppointmentModalLabel">
+              <i class="bi bi-calendar-plus me-2 text-primary"></i>Request Consultation Appointment
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="doctorSelect" class="form-label small fw-semibold text-navy">Attending Physician *</label>
+              <select name="doctor_id" id="doctorSelect" class="form-select form-select-sm" required>
+                <option value="" disabled selected>-- Select an available physician --</option>
+                {% for doc in doctors %}
+                <option value="{{ doc.doctor_id }}">
+                  Dr. {{ doc.full_name }} &mdash; {{ doc.specialisation }} ({{ doc.department }})
+                </option>
+                {% endfor %}
+              </select>
+              <div class="form-text small">Select from hospital attending staff currently accepting consultations.</div>
+            </div>
+            <div class="mb-3">
+              <label for="appointmentDate" class="form-label small fw-semibold text-navy">Preferred Date & Time *</label>
+              <input type="datetime-local" name="appointment_date" id="appointmentDate" class="form-control form-control-sm" required/>
+            </div>
+            <div class="mb-3">
+              <label for="consultationReason" class="form-label small fw-semibold text-navy">Reason for Consultation *</label>
+              <textarea name="reason" id="consultationReason" class="form-control form-control-sm" rows="3"
+                        placeholder="Briefly state your symptoms or consultation purpose (e.g. Annual cardiovascular checkup, chronic migraine follow-up)" required maxlength="255"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn sm-btn-primary btn-sm">Confirm Booking Request</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

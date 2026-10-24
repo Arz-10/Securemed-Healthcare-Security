@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+{% block title %}Physician Clinical Portal{% endblock %}
+
+{% block content %}
+<div class="py-2">
+
+  {% if not doctor %}
+  <div class="alert alert-warning border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>
+        <h5 class="alert-heading mb-1">Doctor Profile Incomplete</h5>
+        <p class="mb-0 small">Your user account has the 'doctor' role, but no linked physician profile record was found in the database. Please contact a system administrator to link your medical credentials.</p>
+      </div>
+    </div>
+  </div>
+  {% else %}
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h1 class="sm-page-title mb-0">
+          <i class="bi bi-heart-pulse me-2 text-primary"></i>Physician Workspace
+        </h1>
+        <span class="badge bg-success-subtle text-success border border-success-subtle small">Clinical Access Active</span>
+      </div>
+      <p class="text-secondary small mb-0">
+        Attending Physician: <strong class="text-navy">{{ doctor.full_name }}</strong> &bull;
+        Dept: <span class="badge bg-light text-navy border">{{ doctor.department }}</span> &bull;
+        Specialisation: <span class="text-navy">{{ doctor.specialisation }}</span> &bull;
+        Licence: <code>{{ doctor.licence_number }}</code>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn sm-btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#createRecordModal">
+        <i class="bi bi-journal-plus me-1"></i>New Record
+      </button>
+      <button class="btn btn-outline-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
+        <i class="bi bi-cloud-arrow-up me-1"></i>Upload Report
+      </button>
+      <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-outline-secondary btn-sm" title="Refresh records">
+        <i class="bi bi-arrow-clockwise"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Clinical Metrics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Appointments</span>
+            <h3 class="fw-bold text-navy mb-0 mt-1">{{ appointments|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light-primary text-primary">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Authorized Patients</span>
+            <h3 class="fw-bold text-primary mb-0 mt-1">{{ patients|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light text-primary border">
+            <i class="bi bi-people-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Medical Records</span>
+            <h3 class="fw-bold text-info mb-0 mt-1">{{ records|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light text-info border">
+            <i class="bi bi-journal-medical"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="text-muted small fw-medium">Diagnostic Reports</span>
+            <h3 class="fw-bold text-secondary mb-0 mt-1">{{ reports|length }}</h3>
+          </div>
+          <div class="sm-feature-icon-box bg-light text-secondary border">
+            <i class="bi bi-file-earmark-medical"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills mb-3 sm-nav-pills gap-1" id="doctorTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'appointments' %}active{% endif %}"
+         href="{{ url_for('doctor.dashboard', tab='appointments') }}">
+        <i class="bi bi-calendar-event me-1"></i>Appointments
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ appointments|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'patients' %}active{% endif %}"
+         href="{{ url_for('doctor.dashboard', tab='patients') }}">
+        <i class="bi bi-person-lines-fill me-1"></i>My Patients
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ patients|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'records' %}active{% endif %}"
+         href="{{ url_for('doctor.dashboard', tab='records') }}">
+        <i class="bi bi-clipboard2-pulse me-1"></i>Medical Records
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ records|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link {% if active_tab == 'reports' %}active{% endif %}"
+         href="{{ url_for('doctor.dashboard', tab='reports') }}">
+        <i class="bi bi-file-earmark-arrow-down me-1"></i>Diagnostic Reports
+        <span class="badge rounded-pill bg-light text-navy ms-1">{{ reports|length }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="doctorTabContent">
+
+    <!-- 1. Appointments Tab -->
+    {% if active_tab == 'appointments' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-calendar-check me-2 text-primary"></i>Consultation Appointments
+        </h5>
+        <span class="text-muted small">Showing {{ appointments|length }} scheduled encounters</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Patient</th>
+              <th scope="col">Appointment Date</th>
+              <th scope="col">Reason / Notes</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in appointments %}
+            <tr>
+              <td class="text-muted small">#{{ appt.id }}</td>
+              <td>
+                <div class="fw-semibold text-navy">{{ appt.patient_name }}</div>
+                <div class="text-muted small">
+                  {{ appt.gender|capitalize if appt.gender else '—' }} &bull;
+                  Blood: {{ appt.blood_group or '—' }} &bull;
+                  Contact: {{ appt.patient_phone or appt.patient_email or '—' }}
+                </div>
+              </td>
+              <td>
+                <div class="fw-medium text-navy">{{ appt.appointment_date.strftime('%b %d, %Y') if appt.appointment_date else '—' }}</div>
+                <div class="text-muted small">{{ appt.appointment_date.strftime('%I:%M %p') if appt.appointment_date else '' }}</div>
+              </td>
+              <td>
+                <div class="text-navy small fw-medium">{{ appt.reason }}</div>
+                {% if appt.notes %}
+                <div class="text-muted small fst-italic mt-1"><i class="bi bi-chat-left-text me-1"></i>{{ appt.notes }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if appt.status == 'scheduled' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Scheduled</span>
+                {% elif appt.status == 'completed' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                {% elif appt.status == 'cancelled' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Cancelled</span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary">{{ appt.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#statusModal{{ appt.id }}"
+                        title="Update status">
+                  <i class="bi bi-pencil-square me-1"></i>Update
+                </button>
+              </td>
+            </tr>
+
+            <!-- Status Update Modal for this appointment -->
+            <div class="modal fade" id="statusModal{{ appt.id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ appt.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form action="{{ url_for('doctor.update_appointment_status', id=appt.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    <div class="modal-header">
+                      <h5 class="modal-title h6 text-navy fw-bold" id="statusModalLabel{{ appt.id }}">
+                        <i class="bi bi-calendar-check me-2 text-primary"></i>Update Appointment #{{ appt.id }}
+                      </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                      <div class="mb-3">
+                        <label class="form-label small fw-semibold text-navy">Patient</label>
+                        <input type="text" class="form-control form-control-sm bg-light" value="{{ appt.patient_name }}" readonly/>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-semibold text-navy">Appointment Date & Reason</label>
+                        <input type="text" class="form-control form-control-sm bg-light" value="{{ appt.appointment_date }} &mdash; {{ appt.reason }}" readonly/>
+                      </div>
+                      <div class="mb-3">
+                        <label for="statusSelect{{ appt.id }}" class="form-label small fw-semibold text-navy">Progress Status</label>
+                        <select name="status" id="statusSelect{{ appt.id }}" class="form-select form-select-sm" required>
+                          <option value="scheduled" {% if appt.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                          <option value="completed" {% if appt.status == 'completed' %}selected{% endif %}>Completed</option>
+                          <option value="cancelled" {% if appt.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="notesInput{{ appt.id }}" class="form-label small fw-semibold text-navy">Clinical Encounter Notes (Optional)</label>
+                        <textarea name="notes" id="notesInput{{ appt.id }}" class="form-control form-control-sm" rows="3" placeholder="Add clinical progression or follow-up notes...">{{ appt.notes or '' }}</textarea>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn sm-btn-primary btn-sm">Save Status</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-calendar-x fs-3 d-block mb-2 text-secondary"></i>
+                No appointments scheduled with your clinical profile yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. Patients Tab -->
+    {% if active_tab == 'patients' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-people-fill me-2 text-primary"></i>Authorized Patient Directory
+        </h5>
+        <span class="text-muted small">Treating relationship verified via appointment encounters</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Patient Name</th>
+              <th scope="col">Contact</th>
+              <th scope="col">Demographics</th>
+              <th scope="col">Emergency Contact</th>
+              <th scope="col">Encounters</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pat in patients %}
+            <tr>
+              <td>
+                <div class="fw-semibold text-navy">{{ pat.full_name }}</div>
+                <div class="text-muted small">Patient ID: #{{ pat.patient_id }}</div>
+              </td>
+              <td>
+                <div class="text-navy small">{{ pat.email }}</div>
+                <div class="text-muted small">{{ pat.phone or 'No phone registered' }}</div>
+              </td>
+              <td>
+                <span class="badge bg-light text-navy border me-1">{{ pat.gender|capitalize if pat.gender else 'Unspecified' }}</span>
+                <span class="badge bg-light text-navy border">Blood: {{ pat.blood_group or '—' }}</span>
+                <div class="text-muted small mt-1">DOB: {{ pat.date_of_birth or '—' }}</div>
+              </td>
+              <td class="text-muted small">{{ pat.emergency_contact or '—' }}</td>
+              <td>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                  {{ pat.appointment_count }} appointment(s)
+                </span>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createRecordModal"
+                        onclick="document.getElementById('recordPatientSelect').value = '{{ pat.patient_id }}';">
+                  <i class="bi bi-plus-circle me-1"></i>Add Record
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-person-x fs-3 d-block mb-2 text-secondary"></i>
+                No patients assigned yet. Patients will appear here once an appointment is scheduled.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 3. Medical Records Tab -->
+    {% if active_tab == 'records' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-journal-medical me-2 text-primary"></i>Electronic Medical Records
+        </h5>
+        <button class="btn sm-btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#createRecordModal">
+          <i class="bi bi-plus-lg me-1"></i>New Record
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Patient</th>
+              <th scope="col">Diagnosis</th>
+              <th scope="col">Prescription</th>
+              <th scope="col">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in records %}
+            <tr>
+              <td>
+                <div class="fw-medium text-navy">{{ rec.record_date.strftime('%b %d, %Y') if rec.record_date else '—' }}</div>
+                <div class="text-muted small">{{ rec.record_date.strftime('%I:%M %p') if rec.record_date else '' }}</div>
+              </td>
+              <td>
+                <div class="fw-semibold text-navy">{{ rec.patient_name }}</div>
+                <div class="text-muted small">Patient #{{ rec.patient_id }}</div>
+              </td>
+              <td>
+                <div class="fw-semibold text-primary">{{ rec.diagnosis }}</div>
+              </td>
+              <td>
+                <div class="text-navy small">{{ rec.prescription or 'None recorded' }}</div>
+              </td>
+              <td class="text-muted small">
+                {{ rec.notes or '—' }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="bi bi-journal-x fs-3 d-block mb-2 text-secondary"></i>
+                No medical records authored yet. Click "New Record" to document a patient encounter.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. Reports Tab -->
+    {% if active_tab == 'reports' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 border-light-subtle d-flex justify-content-between align-items-center">
+        <h5 class="card-title text-navy mb-0 h6 fw-bold">
+          <i class="bi bi-file-earmark-medical me-2 text-primary"></i>Patient Diagnostic Reports
+        </h5>
+        <button class="btn btn-outline-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
+          <i class="bi bi-cloud-arrow-up me-1"></i>Upload Report
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 sm-table">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Document</th>
+              <th scope="col">Patient</th>
+              <th scope="col">Uploaded By</th>
+              <th scope="col">Size</th>
+              <th scope="col" class="text-end">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rep in reports %}
+            <tr>
+              <td class="text-muted small">
+                {{ rep.upload_date.strftime('%b %d, %Y') if rep.upload_date else '—' }}
+              </td>
+              <td>
+                <div class="fw-semibold text-navy">
+                  <i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ rep.original_name }}
+                </div>
+                <div class="text-muted small">MIME: <code>{{ rep.mime_type }}</code></div>
+              </td>
+              <td>
+                <div class="fw-medium text-navy">{{ rep.patient_name }}</div>
+                <div class="text-muted small">Patient #{{ rep.patient_id }}</div>
+              </td>
+              <td class="text-muted small">{{ rep.uploader_name }}</td>
+              <td class="text-muted small">{{ (rep.file_size / 1024)|round(1) }} KB</td>
+              <td class="text-end">
+                <a href="{{ url_for('doctor.download_report', id=rep.id) }}"
+                   class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-download me-1"></i>Download
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-file-earmark-x fs-3 d-block mb-2 text-secondary"></i>
+                No diagnostic reports uploaded for your authorized patients yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Modal: Create Medical Record -->
+  <div class="modal fade" id="createRecordModal" tabindex="-1" aria-labelledby="createRecordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form action="{{ url_for('doctor.create_medical_record') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+          <div class="modal-header">
+            <h5 class="modal-title h6 text-navy fw-bold" id="createRecordModalLabel">
+              <i class="bi bi-journal-plus me-2 text-primary"></i>Author Electronic Medical Record
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="recordPatientSelect" class="form-label small fw-semibold text-navy">Authorized Patient *</label>
+                <select name="patient_id" id="recordPatientSelect" class="form-select form-select-sm" required>
+                  <option value="" disabled selected>-- Select an authorized patient --</option>
+                  {% for pat in patients %}
+                  <option value="{{ pat.patient_id }}">{{ pat.full_name }} (Patient #{{ pat.patient_id }})</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text small">Only patients with scheduled consultations appear in this list.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="recordAppointmentSelect" class="form-label small fw-semibold text-navy">Linked Encounter (Optional)</label>
+                <select name="appointment_id" id="recordAppointmentSelect" class="form-select form-select-sm">
+                  <option value="">-- No specific appointment link --</option>
+                  {% for appt in appointments %}
+                  <option value="{{ appt.id }}">#{{ appt.id }} &mdash; {{ appt.patient_name }} ({{ appt.appointment_date }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <label for="recordDiagnosis" class="form-label small fw-semibold text-navy">Clinical Diagnosis *</label>
+                <input type="text" name="diagnosis" id="recordDiagnosis" class="form-control form-control-sm"
+                       placeholder="e.g. Acute Bronchitis, Essential Hypertension" required maxlength="255"/>
+              </div>
+              <div class="col-12">
+                <label for="recordPrescription" class="form-label small fw-semibold text-navy">Prescription & Dosage</label>
+                <textarea name="prescription" id="recordPrescription" class="form-control form-control-sm" rows="3"
+                          placeholder="e.g. Amoxicillin 500mg TID x 7 days; Paracetamol 500mg PRN"></textarea>
+              </div>
+              <div class="col-12">
+                <label for="recordNotes" class="form-label small fw-semibold text-navy">Confidential Clinical Notes</label>
+                <textarea name="notes" id="recordNotes" class="form-control form-control-sm" rows="3"
+                          placeholder="Clinical examination findings, follow-up recommendations, etc."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn sm-btn-primary btn-sm">Save Clinical Record</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Upload Diagnostic Report -->
+  <div class="modal fade" id="uploadReportModal" tabindex="-1" aria-labelledby="uploadReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{{ url_for('doctor.upload_report') }}" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+          <div class="modal-header">
+            <h5 class="modal-title h6 text-navy fw-bold" id="uploadReportModalLabel">
+              <i class="bi bi-cloud-arrow-up me-2 text-primary"></i>Upload Diagnostic Report
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="uploadPatientSelect" class="form-label small fw-semibold text-navy">Patient *</label>
+              <select name="patient_id" id="uploadPatientSelect" class="form-select form-select-sm" required>
+                <option value="" disabled selected>-- Select an authorized patient --</option>
+                {% for pat in patients %}
+                <option value="{{ pat.patient_id }}">{{ pat.full_name }} (Patient #{{ pat.patient_id }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="reportFileInput" class="form-label small fw-semibold text-navy">Report Document *</label>
+              <input type="file" name="report_file" id="reportFileInput" class="form-control form-control-sm"
+                     accept=".pdf,.png,.jpg,.jpeg" required/>
+              <div class="form-text small">Accepted formats: PDF, PNG, JPG (maximum 5 MB). File signatures are verified.</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn sm-btn-primary btn-sm">Upload & Verify</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,371 @@
+/* ============================================================
+   style.css – SecureMed Healthcare Design System
+   Clinical palette: White & soft light-blue, deep navy text,
+   restrained blue accents, accessible focus and responsive layout.
+   ============================================================ */
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  /* Clinical color palette */
+  --sm-navy:          #0e2439;   /* Deep clinical navy for primary headings & text */
+  --sm-navy-dark:     #081726;
+  --sm-navy-light:    #1b3a57;
+  --sm-primary:       #0d6efd;   /* Restrained clinical blue accent */
+  --sm-primary-dark:  #0a58ca;
+  --sm-primary-light: #e7f1ff;   /* Soft blue tint for active/focus states */
+  --sm-accent:        #0284c7;   /* Medical cyan-blue */
+  
+  --sm-success:       #0f766e;   /* Clinical teal-green for security & success */
+  --sm-success-light: #e6f4f1;
+  --sm-danger:        #b91c1c;   /* Restrained crimson for critical errors */
+  --sm-danger-light:  #fee2e2;
+  --sm-warning:       #b45309;   /* Amber for alerts and pending states */
+  --sm-warning-light: #fef3c7;
+
+  /* Surfaces & backgrounds */
+  --sm-bg:            #f4f8fb;   /* Soft healthcare light-blue page background */
+  --sm-surface:       #ffffff;   /* Pure white card and container surface */
+  --sm-surface-alt:   #f8fafc;
+  --sm-border:        #dbe5ef;   /* Crisp, subtle clinical border */
+  --sm-border-light:  #eef3f8;
+
+  /* Typography */
+  --sm-text-primary:  #0e2439;
+  --sm-text-secondary:#475569;
+  --sm-text-muted:    #64748b;
+
+  /* Layout */
+  --sm-navbar-bg:     #0e2439;
+  --sm-navbar-height: 64px;
+  --sm-radius:        0.5rem;
+  --sm-radius-lg:     0.75rem;
+
+  /* Shadows */
+  --sm-shadow-sm:     0 1px 3px rgba(14, 36, 57, 0.06);
+  --sm-shadow:        0 4px 14px rgba(14, 36, 57, 0.08);
+  --sm-shadow-md:     0 8px 24px rgba(14, 36, 57, 0.09);
+
+  --sm-font:          'Inter', system-ui, -apple-system, sans-serif;
+  --sm-transition:    0.15s ease-in-out;
+}
+
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--sm-font);
+  background-color: var(--sm-bg);
+  color: var(--sm-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Accessible Keyboard Focus ──────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--sm-primary);
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--sm-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ── Typography Utilities ───────────────────────────────────── */
+.text-navy { color: var(--sm-navy) !important; }
+.tracking-wide { letter-spacing: 0.03em; }
+
+/* ── Navigation Bar ─────────────────────────────────────────── */
+.sm-navbar {
+  background-color: var(--sm-navbar-bg);
+  min-height: var(--sm-navbar-height);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(14, 36, 57, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.sm-navbar .navbar-brand {
+  font-size: 1.15rem;
+  color: #ffffff !important;
+}
+
+.sm-brand-icon {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  font-size: 1.1rem;
+}
+
+.sm-role-badge {
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.25em 0.65em;
+  border-radius: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Main Content Container ─────────────────────────────────── */
+.sm-main {
+  flex: 1 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.sm-footer {
+  background-color: var(--sm-surface);
+  border-top: 1px solid var(--sm-border);
+  color: var(--sm-text-muted);
+}
+
+/* ── Cards & Panels ─────────────────────────────────────────── */
+.card {
+  border-radius: var(--sm-radius-lg);
+  border: 1px solid var(--sm-border);
+  background-color: var(--sm-surface);
+}
+
+.sm-section-card {
+  background-color: var(--sm-surface);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--sm-radius-lg);
+}
+
+.sm-placeholder-card {
+  border: 1px dashed var(--sm-border) !important;
+  background-color: var(--sm-surface-alt);
+  transition: border-color var(--sm-transition), transform var(--sm-transition);
+}
+
+.sm-placeholder-card:hover {
+  border-color: #cbd5e1 !important;
+  transform: translateY(-2px);
+}
+
+.sm-feature-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-light-primary {
+  background-color: var(--sm-primary-light);
+}
+
+/* ── Page Titles ────────────────────────────────────────────── */
+.sm-page-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sm-navy);
+  letter-spacing: -0.01em;
+}
+
+/* ── Status Badges ──────────────────────────────────────────── */
+.sm-badge-status-pending {
+  background-color: var(--sm-warning-light);
+  color: var(--sm-warning);
+  border: 1px solid #fde68a;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sm-badge-outline {
+  background-color: #ffffff;
+  color: var(--sm-text-secondary);
+  border: 1px solid var(--sm-border);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.sm-btn-primary {
+  background-color: var(--sm-primary);
+  border-color: var(--sm-primary);
+  color: #ffffff;
+  border-radius: var(--sm-radius);
+  font-weight: 600;
+  transition: background-color var(--sm-transition), box-shadow var(--sm-transition);
+}
+
+.sm-btn-primary:hover {
+  background-color: var(--sm-primary-dark);
+  border-color: var(--sm-primary-dark);
+  color: #ffffff;
+}
+
+.btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+}
+
+/* ── Forms ──────────────────────────────────────────────────── */
+.form-label {
+  color: var(--sm-navy);
+}
+
+.form-control, .form-select {
+  border-radius: var(--sm-radius);
+  border: 1px solid var(--sm-border);
+  font-size: 0.925rem;
+  color: var(--sm-text-primary);
+  background-color: #ffffff;
+  padding: 0.55rem 0.75rem;
+  transition: border-color var(--sm-transition), box-shadow var(--sm-transition);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--sm-primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.14);
+}
+
+/* ── Alerts ─────────────────────────────────────────────────── */
+.alert {
+  border-radius: var(--sm-radius);
+  border-width: 1px;
+}
+
+.alert-danger {
+  background-color: var(--sm-danger-light);
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.alert-success {
+  background-color: var(--sm-success-light);
+  border-color: #99f6e4;
+  color: #115e59;
+}
+
+.alert-warning {
+  background-color: var(--sm-warning-light);
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.alert-info {
+  background-color: var(--sm-primary-light);
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+/* ============================================================
+   LOGIN PAGE — Restrained Healthcare Aesthetic
+   ============================================================ */
+.sm-login-wrapper {
+  background-color: var(--sm-bg);
+  background-image: radial-gradient(#dce7f3 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.sm-login-card {
+  width: 100%;
+  max-width: 440px;
+  background-color: #ffffff;
+  border: 1px solid var(--sm-border) !important;
+  border-radius: var(--sm-radius-lg) !important;
+  box-shadow: var(--sm-shadow-md) !important;
+}
+
+.sm-login-header {
+  background-color: #ffffff;
+}
+
+.sm-login-logo {
+  width: 54px;
+  height: 54px;
+  background-color: var(--sm-primary-light);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  color: var(--sm-primary);
+}
+
+.sm-login-notice {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 0.775rem;
+}
+
+.sm-input-icon {
+  background-color: #f8fafc;
+  border-color: var(--sm-border);
+  border-right: none;
+  color: var(--sm-text-muted);
+}
+
+.sm-form-control {
+  border-left: none !important;
+}
+
+.sm-form-control:focus {
+  border-left: none !important;
+}
+
+.sm-toggle-password {
+  background-color: #f8fafc;
+  border: 1px solid var(--sm-border);
+  border-left: none;
+  color: var(--sm-text-muted);
+  border-radius: 0 var(--sm-radius) var(--sm-radius) 0 !important;
+}
+
+.sm-toggle-password:hover {
+  background-color: #f1f5f9;
+  color: var(--sm-navy);
+}
+
+.sm-login-footer {
+  background-color: #f8fafc;
+  border-top: 1px solid var(--sm-border);
+}
+
+/* ── Responsive adjustments ─────────────────────────────────── */
+@media (max-width: 576px) {
+  .sm-main {
+    padding: 1.25rem 0.75rem;
+  }
+  .sm-login-card {
+    border-radius: var(--sm-radius) !important;
+    box-shadow: var(--sm-shadow-sm) !important;
+  }
+}

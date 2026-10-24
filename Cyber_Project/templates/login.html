@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% set hide_nav = true %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="sm-login-wrapper d-flex align-items-center justify-content-center min-vh-100 py-4">
+
+  <div class="sm-login-card card border-0 shadow-sm">
+
+    <!-- Card header / clinical branding -->
+    <div class="sm-login-header text-center pt-4 pb-3 px-4">
+      <div class="sm-login-logo mb-2">
+        <i class="bi bi-shield-plus"></i>
+      </div>
+      <h1 class="h4 fw-bold text-navy mb-1">SecureMed</h1>
+      <p class="text-secondary small mb-0">Clinical Information &amp; Patient Portal</p>
+    </div>
+
+    <!-- Security notice badge -->
+    <div class="px-4 pb-1">
+      <div class="sm-login-notice d-flex align-items-center justify-content-center gap-1 py-1 px-2 rounded small text-muted">
+        <i class="bi bi-shield-lock-fill text-primary"></i>
+        <span>Authorized Medical Personnel &amp; Patients Only</span>
+      </div>
+    </div>
+
+    <!-- Card body -->
+    <div class="card-body px-4 py-3">
+
+      <!-- Flashed messages for login page -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-3" id="login-flash-container">
+            {% for category, message in messages %}
+              <div
+                class="alert alert-{{ 'danger' if category in ['error', 'danger'] else category }} alert-dismissible fade show shadow-sm py-2 px-3 small d-flex align-items-center"
+                role="alert"
+              >
+                <i class="bi bi-{% if category == 'success' %}check-circle-fill text-success{% elif category in ['danger', 'error'] %}exclamation-octagon-fill text-danger{% elif category == 'warning' %}exclamation-triangle-fill text-warning{% else %}info-circle-fill text-primary{% endif %} me-2 flex-shrink-0"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate id="loginForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+
+        <!-- Username -->
+        <div class="mb-3">
+          <label for="username" class="form-label fw-semibold text-navy small mb-1">
+            Username or Medical ID
+          </label>
+          <div class="input-group">
+            <span class="input-group-text sm-input-icon">
+              <i class="bi bi-person-fill"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control sm-form-control"
+              id="username"
+              name="username"
+              placeholder="e.g. admin or doctor1"
+              autocomplete="username"
+              required
+              autofocus
+            />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="password" class="form-label fw-semibold text-navy small mb-0">
+              Password
+            </label>
+          </div>
+          <div class="input-group">
+            <span class="input-group-text sm-input-icon">
+              <i class="bi bi-lock-fill"></i>
+            </span>
+            <input
+              type="password"
+              class="form-control sm-form-control"
+              id="password"
+              name="password"
+              placeholder="Enter your account password"
+              autocomplete="current-password"
+              required
+            />
+            <button
+              class="btn sm-toggle-password"
+              type="button"
+              id="togglePassword"
+              aria-label="Show or hide password"
+              title="Show or hide password"
+            >
+              <i class="bi bi-eye-fill" id="togglePasswordIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn sm-btn-primary fw-semibold py-2 shadow-sm" id="loginBtn">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to SecureMed
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Card footer -->
+    <div class="card-footer text-center py-3 sm-login-footer">
+      <small class="text-muted d-block">
+        <i class="bi bi-check2-circle text-success me-1"></i>
+        End-to-end encrypted session &bull; Role-based access control
+      </small>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Toggle password visibility with accessibility feedback
+  const toggleBtn  = document.getElementById('togglePassword');
+  const pwdInput   = document.getElementById('password');
+  const toggleIcon = document.getElementById('togglePasswordIcon');
+
+  if (toggleBtn && pwdInput && toggleIcon) {
+    toggleBtn.addEventListener('click', () => {
+      const isPassword = pwdInput.type === 'password';
+      pwdInput.type = isPassword ? 'text' : 'password';
+      toggleIcon.className = isPassword ? 'bi bi-eye-slash-fill' : 'bi bi-eye-fill';
+      toggleBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+  }
+</script>
+{% endblock %}

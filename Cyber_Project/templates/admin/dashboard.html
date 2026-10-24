@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+{% block title %}Administrator Console{% endblock %}
+
+{% block content %}
+<div class="py-2">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h1 class="sm-page-title mb-0">
+          <i class="bi bi-shield-shaded me-2 text-primary"></i>Administration Console
+        </h1>
+        <span class="badge bg-success-subtle text-success border border-success-subtle small">Active System</span>
+      </div>
+      <p class="text-secondary small mb-0">System administration, access control, and compliance auditing</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn sm-btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="bi bi-person-plus-fill me-1"></i>Provision User
+      </button>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm" title="Refresh data">
+        <i class="bi bi-arrow-clockwise"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Live System Metrics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Total Users</span>
+        <h3 class="fw-bold text-navy mb-0 mt-1">{{ stats.users }}</h3>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Active Doctors</span>
+        <h3 class="fw-bold text-primary mb-0 mt-1">{{ stats.doctors }}</h3>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Patients</span>
+        <h3 class="fw-bold text-info mb-0 mt-1">{{ stats.patients }}</h3>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Appointments</span>
+        <h3 class="fw-bold text-warning mb-0 mt-1">{{ stats.appointments }}</h3>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Reports Stored</span>
+        <h3 class="fw-bold text-secondary mb-0 mt-1">{{ stats.reports }}</h3>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card h-100 border-0 shadow-sm p-3">
+        <span class="text-muted small fw-medium">Audit Events</span>
+        <h3 class="fw-bold text-success mb-0 mt-1">{{ stats.audit_logs }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Administration Tabs -->
+  <ul class="nav nav-pills mb-3 gap-1 border-bottom pb-2">
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'overview' or active_tab == 'users' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='users') }}">
+        <i class="bi bi-people me-1"></i>Users ({{ users | length }})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'doctors' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='doctors') }}">
+        <i class="bi bi-heart-pulse me-1"></i>Doctors ({{ doctors | length }})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'patients' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='patients') }}">
+        <i class="bi bi-person-heart me-1"></i>Patients ({{ patients | length }})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'appointments' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='appointments') }}">
+        <i class="bi bi-calendar-check me-1"></i>Appointments ({{ appointments | length }})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'reports' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='reports') }}">
+        <i class="bi bi-file-earmark-medical me-1"></i>Medical Reports ({{ reports | length }})
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == 'audit' %}active{% endif %} btn-sm" href="{{ url_for('admin.dashboard', tab='audit') }}">
+        <i class="bi bi-shield-check me-1"></i>Audit Logs ({{ audit_events | length }})
+      </a>
+    </li>
+  </ul>
+
+  <!-- TAB CONTENT -->
+
+  <!-- Tab 1: Users -->
+  {% if active_tab == 'overview' or active_tab == 'users' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-person-lines-fill me-2 text-primary"></i>User Accounts Directory</h6>
+      <button class="btn sm-btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Account
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Username</th>
+              <th scope="col">Full Name</th>
+              <th scope="col">Role</th>
+              <th scope="col">Email</th>
+              <th scope="col">Status</th>
+              <th scope="col">Registered</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="text-muted small">#{{ u.id }}</td>
+              <td class="fw-semibold text-navy">{{ u.username }}</td>
+              <td>{{ u.full_name }}</td>
+              <td>
+                <span class="badge {% if u.role == 'admin' %}bg-primary{% elif u.role == 'doctor' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                  {{ u.role | capitalize }}
+                </span>
+              </td>
+              <td class="small">{{ u.email }}</td>
+              <td>
+                {% if u.is_active %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+              <td class="text-end">
+                {% if u.id != session.get('user_id') %}
+                <form method="POST" action="{{ url_for('admin.toggle_user_status', id=u.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                  <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" title="Toggle active status">
+                    {% if u.is_active %}<i class="bi bi-slash-circle me-1"></i>Deactivate{% else %}<i class="bi bi-check-circle me-1"></i>Activate{% endif %}
+                  </button>
+                </form>
+                {% else %}
+                <span class="badge bg-light text-muted border small">Current Session</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">No users found in database.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 2: Doctors -->
+  {% if active_tab == 'doctors' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-heart-pulse me-2 text-primary"></i>Medical Staff Directory</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Doctor ID</th>
+              <th>Physician Name</th>
+              <th>Specialisation</th>
+              <th>Department</th>
+              <th>Licence #</th>
+              <th>Email</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in doctors %}
+            <tr>
+              <td class="text-muted small">#DOC-{{ doc.doctor_id }}</td>
+              <td class="fw-semibold text-navy">{{ doc.full_name }}</td>
+              <td><span class="badge bg-light text-navy border">{{ doc.specialisation or 'General' }}</span></td>
+              <td>{{ doc.department or 'General' }}</td>
+              <td class="font-monospace small">{{ doc.licence_number or '—' }}</td>
+              <td class="small">{{ doc.email }}</td>
+              <td>
+                {% if doc.is_active %}
+                  <span class="badge bg-success-subtle text-success">Active</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">No doctor profiles found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 3: Patients -->
+  {% if active_tab == 'patients' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-person-heart me-2 text-primary"></i>Registered Patients Directory</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Patient ID</th>
+              <th>Patient Name</th>
+              <th>Date of Birth</th>
+              <th>Gender</th>
+              <th>Blood Group</th>
+              <th>Emergency Contact</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pat in patients %}
+            <tr>
+              <td class="text-muted small">#PAT-{{ pat.patient_id }}</td>
+              <td class="fw-semibold text-navy">{{ pat.full_name }}</td>
+              <td>{{ pat.date_of_birth or '—' }}</td>
+              <td>{{ pat.gender | capitalize if pat.gender else '—' }}</td>
+              <td>
+                {% if pat.blood_group %}
+                <span class="badge bg-danger-subtle text-danger">{{ pat.blood_group }}</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ pat.emergency_contact or '—' }}</td>
+              <td class="small">{{ pat.email }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">No patient profiles found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 4: Appointments -->
+  {% if active_tab == 'appointments' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-calendar-check me-2 text-primary"></i>System Appointments</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Scheduled Time</th>
+              <th>Patient</th>
+              <th>Attending Physician</th>
+              <th>Status</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in appointments %}
+            <tr>
+              <td class="text-muted small">#{{ appt.id }}</td>
+              <td class="fw-semibold text-navy">
+                {{ appt.appointment_date.strftime('%Y-%m-%d %H:%M') if appt.appointment_date else '—' }}
+              </td>
+              <td>{{ appt.patient_name }}</td>
+              <td>{{ appt.doctor_name }}</td>
+              <td>
+                {% if appt.status == 'scheduled' %}
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Scheduled</span>
+                {% elif appt.status == 'completed' %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                {% elif appt.status == 'cancelled' %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Cancelled</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ appt.reason or 'Consultation' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">No appointments recorded.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 5: Medical Reports -->
+  {% if active_tab == 'reports' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-folder-check me-2 text-primary"></i>Medical Reports Storage</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Original Document</th>
+              <th>Patient</th>
+              <th>Uploaded By</th>
+              <th>Size</th>
+              <th>Upload Date</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rep in reports %}
+            <tr>
+              <td class="text-muted small">#{{ rep.id }}</td>
+              <td>
+                <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                <span class="fw-semibold text-navy">{{ rep.original_name }}</span>
+              </td>
+              <td>{{ rep.patient_name }}</td>
+              <td>
+                {{ rep.uploader_name }}
+                <span class="badge bg-light text-dark border small">{{ rep.uploader_role | capitalize }}</span>
+              </td>
+              <td class="small">{{ rep.file_size }} bytes</td>
+              <td class="text-muted small">{{ rep.upload_date.strftime('%Y-%m-%d %H:%M') if rep.upload_date else '—' }}</td>
+              <td class="text-end">
+                <a href="{{ url_for('admin.download_report', id=rep.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Download report">
+                  <i class="bi bi-download"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin.delete_report', id=rep.id) }}" class="d-inline" onsubmit="return confirm('Permanently delete this medical report?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete report">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">No medical reports uploaded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tab 6: Audit Logs -->
+  {% if active_tab == 'audit' %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-shield-check me-2 text-primary"></i>Security Audit Events</h6>
+        <span class="badge bg-success-subtle text-success border border-success-subtle small">
+          <i class="bi bi-shield-fill-check me-1"></i>Audit Subsystem Healthy
+        </span>
+      </div>
+      <form method="GET" action="{{ url_for('admin.dashboard') }}" class="d-flex flex-wrap gap-2 align-items-center">
+        <input type="hidden" name="tab" value="audit"/>
+        <select name="event_type" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Event Categories</option>
+          <option value="LOGIN_SUCCESS" {% if current_audit_filter == 'LOGIN_SUCCESS' %}selected{% endif %}>LOGIN_SUCCESS</option>
+          <option value="LOGIN_FAILED" {% if current_audit_filter == 'LOGIN_FAILED' %}selected{% endif %}>LOGIN_FAILED</option>
+          <option value="LOGOUT" {% if current_audit_filter == 'LOGOUT' %}selected{% endif %}>LOGOUT</option>
+          <option value="UNAUTHORIZED_ACCESS" {% if current_audit_filter == 'UNAUTHORIZED_ACCESS' %}selected{% endif %}>UNAUTHORIZED_ACCESS</option>
+          <option value="APPOINTMENT_CHANGE" {% if current_audit_filter == 'APPOINTMENT_CHANGE' %}selected{% endif %}>APPOINTMENT_CHANGE</option>
+          <option value="MEDICAL_RECORD_CHANGE" {% if current_audit_filter == 'MEDICAL_RECORD_CHANGE' %}selected{% endif %}>MEDICAL_RECORD_CHANGE</option>
+          <option value="REPORT_UPLOAD" {% if current_audit_filter == 'REPORT_UPLOAD' %}selected{% endif %}>REPORT_UPLOAD</option>
+          <option value="REPORT_DOWNLOAD" {% if current_audit_filter == 'REPORT_DOWNLOAD' %}selected{% endif %}>REPORT_DOWNLOAD</option>
+          <option value="REPORT_DELETION" {% if current_audit_filter == 'REPORT_DELETION' %}selected{% endif %}>REPORT_DELETION</option>
+          <option value="USER_MANAGEMENT" {% if current_audit_filter == 'USER_MANAGEMENT' %}selected{% endif %}>USER_MANAGEMENT</option>
+        </select>
+        <select name="outcome" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Outcomes</option>
+          <option value="SUCCESS" {% if current_outcome_filter == 'SUCCESS' %}selected{% endif %}>SUCCESS</option>
+          <option value="DENIED" {% if current_outcome_filter == 'DENIED' %}selected{% endif %}>DENIED</option>
+          <option value="FAILED" {% if current_outcome_filter == 'FAILED' %}selected{% endif %}>FAILED</option>
+        </select>
+        {% if current_audit_filter or current_outcome_filter %}
+        <a href="{{ url_for('admin.dashboard', tab='audit') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        {% endif %}
+      </form>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 font-monospace small">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Timestamp</th>
+              <th>Event Category</th>
+              <th>Outcome</th>
+              <th>User ID</th>
+              <th>IP Address</th>
+              <th>Context Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in audit_events %}
+            <tr>
+              <td class="text-muted">#{{ log.id }}</td>
+              <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '—' }}</td>
+              <td><span class="badge bg-light text-dark border">{{ log.event_type }}</span></td>
+              <td>
+                {% if log.outcome == 'SUCCESS' %}
+                  <span class="badge bg-success-subtle text-success">SUCCESS</span>
+                {% elif log.outcome == 'DENIED' %}
+                  <span class="badge bg-danger-subtle text-danger">DENIED</span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning">{{ log.outcome }}</span>
+                {% endif %}
+              </td>
+              <td>{{ log.user_id if log.user_id is not none else 'Anonymous' }}</td>
+              <td>{{ log.ip_address or '—' }}</td>
+              <td class="text-truncate text-secondary" style="max-width: 320px;" title="{{ log.details }}">
+                {{ log.details or '—' }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted font-sans-serif">No audit events found for this filter.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <!-- Audit Pagination Controls -->
+      {% if total_pages > 1 %}
+      <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle font-sans-serif">
+        <span class="small text-muted">Page {{ current_page }} of {{ total_pages }} ({{ total_audit_count }} total events)</span>
+        <div class="btn-group btn-group-sm">
+          {% if current_page > 1 %}
+          <a href="{{ url_for('admin.dashboard', tab='audit', page=current_page-1, event_type=current_audit_filter, outcome=current_outcome_filter) }}" class="btn btn-outline-secondary">
+            &laquo; Previous
+          </a>
+          {% endif %}
+          {% if current_page < total_pages %}
+          <a href="{{ url_for('admin.dashboard', tab='audit', page=current_page+1, event_type=current_audit_filter, outcome=current_outcome_filter) }}" class="btn btn-outline-secondary">
+            Next &raquo;
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Modal: Create User -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold text-navy" id="createUserModalLabel">
+          <i class="bi bi-person-plus text-primary me-2"></i>Provision New Account
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('admin.create_user') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label for="new_role" class="form-label small fw-semibold text-navy">Account Role</label>
+            <select class="form-select sm-form-control" id="new_role" name="role" required onchange="toggleRoleFields(this.value)">
+              <option value="doctor">Doctor (Physician)</option>
+              <option value="patient" selected>Patient</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="new_username" class="form-label small fw-semibold text-navy">Username</label>
+              <input type="text" class="form-control sm-form-control" id="new_username" name="username" placeholder="e.g. dr_miller" required/>
+            </div>
+            <div class="col-sm-6">
+              <label for="new_password" class="form-label small fw-semibold text-navy">Password</label>
+              <input type="password" class="form-control sm-form-control" id="new_password" name="password" placeholder="Min. 8 characters" required/>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="new_full_name" class="form-label small fw-semibold text-navy">Full Legal Name</label>
+            <input type="text" class="form-control sm-form-control" id="new_full_name" name="full_name" placeholder="e.g. Dr. Sarah Miller" required/>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="new_email" class="form-label small fw-semibold text-navy">Email Address</label>
+              <input type="email" class="form-control sm-form-control" id="new_email" name="email" placeholder="name@hospital.local" required/>
+            </div>
+            <div class="col-sm-6">
+              <label for="new_phone" class="form-label small fw-semibold text-navy">Phone (Optional)</label>
+              <input type="text" class="form-control sm-form-control" id="new_phone" name="phone" placeholder="+1 555-0199"/>
+            </div>
+          </div>
+
+          <!-- Doctor-specific Fields -->
+          <div id="doctorFields" style="display: none;">
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label for="specialisation" class="form-label small fw-semibold text-navy">Specialisation</label>
+                <input type="text" class="form-control sm-form-control" id="specialisation" name="specialisation" placeholder="e.g. Cardiology"/>
+              </div>
+              <div class="col-sm-6">
+                <label for="department" class="form-label small fw-semibold text-navy">Department</label>
+                <input type="text" class="form-control sm-form-control" id="department" name="department" placeholder="e.g. Inpatient"/>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="licence_number" class="form-label small fw-semibold text-navy">Medical Licence #</label>
+              <input type="text" class="form-control sm-form-control" id="licence_number" name="licence_number" placeholder="e.g. MD-99421"/>
+            </div>
+          </div>
+
+          <!-- Patient-specific Fields -->
+          <div id="patientFields">
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label for="date_of_birth" class="form-label small fw-semibold text-navy">Date of Birth</label>
+                <input type="date" class="form-control sm-form-control" id="date_of_birth" name="date_of_birth"/>
+              </div>
+              <div class="col-sm-6">
+                <label for="gender" class="form-label small fw-semibold text-navy">Gender</label>
+                <select class="form-select sm-form-control" id="gender" name="gender">
+                  <option value="">Select...</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label for="blood_group" class="form-label small fw-semibold text-navy">Blood Group</label>
+                <input type="text" class="form-control sm-form-control" id="blood_group" name="blood_group" placeholder="e.g. O+, A-"/>
+              </div>
+              <div class="col-sm-6">
+                <label for="emergency_contact" class="form-label small fw-semibold text-navy">Emergency Contact</label>
+                <input type="text" class="form-control sm-form-control" id="emergency_contact" name="emergency_contact" placeholder="+1 555-0911"/>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn sm-btn-primary btn-sm px-4">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleRoleFields(role) {
+  const docFields = document.getElementById('doctorFields');
+  const patFields = document.getElementById('patientFields');
+  if (role === 'doctor') {
+    docFields.style.display = 'block';
+    patFields.style.display = 'none';
+  } else if (role === 'patient') {
+    docFields.style.display = 'none';
+    patFields.style.display = 'block';
+  } else {
+    docFields.style.display = 'none';
+    patFields.style.display = 'none';
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const roleSelect = document.getElementById('new_role');
+  if (roleSelect) toggleRoleFields(roleSelect.value);
+});
+</script>
+{% endblock %}
